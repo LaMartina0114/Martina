@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Martina"><meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icono-512.png">
+<meta name="robots" content="noindex,nofollow">
+<title>Martina</title>
+<style>
+:root{--fondo:#000000;--tinta:#ffffff;--suave:#b8b2a6;--acento:#f2dc7e}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--fondo);color:var(--tinta);font:17px/1.4 -apple-system,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px 140px}
+h1{font-size:28px;margin:0 0 4px}p{margin:0;color:var(--suave);text-align:center;max-width:320px}
+#estado{margin-top:28px;min-height:1.4em}
+.flecha{margin-top:18px;color:var(--acento);font-size:15px}
+</style></head><body>
+<img src="apple-touch-icon.png" alt="" width="96" height="96" style="border-radius:20px;margin-bottom:14px">
+<h1>Martina</h1><p>Muebles La Martina</p>
+<p id="estado">Preparando la llamada…</p>
+<p class="flecha" id="flecha" hidden>Toca el botón de llamada abajo para hablar con ella ↓</p>
+<script>
+// Widget oficial de ElevenLabs con un enlace firmado que entrega n8n (se renueva antes de vencer)
+const estado = document.getElementById('estado');
+let widget = null;
+async function enlaceNuevo() {
+  const k = new URLSearchParams(location.search).get('k') || '';
+  const r = await fetch('https://muebleslamartina.app.n8n.cloud/webhook/martina-llamar-enlace?k=' + encodeURIComponent(k), { cache: 'no-store' });
+  if (!r.ok) throw new Error('respuesta ' + r.status);
+  return (await r.json()).signed_url;
+}
+async function preparar() {
+  try {
+    const url = await enlaceNuevo();
+    if (!widget) {
+      widget = document.createElement('elevenlabs-convai');
+      widget.setAttribute('signed-url', url);
+      widget.setAttribute('variant', 'full');
+      widget.setAttribute('action-text', 'Llamar a Martina');
+      widget.setAttribute('start-call-text', 'Llamar');
+      widget.setAttribute('end-call-text', 'Colgar');
+      widget.setAttribute('listening-text', 'Te escucho…');
+      widget.setAttribute('speaking-text', 'Martina está hablando');
+      widget.setAttribute('avatar-image-url', new URL('apple-touch-icon.png', location.href).href);
+      document.body.appendChild(widget);
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed@0.25.2';
+      s.async = true; s.type = 'text/javascript';
+      s.onerror = () => { estado.textContent = 'No pude cargar la voz. Revisa internet y recarga la página.'; };
+      document.body.appendChild(s);
+    } else {
+      widget.setAttribute('signed-url', url);
+    }
+    estado.textContent = 'Lista para llamar';
+    document.getElementById('flecha').hidden = false;
+  } catch (e) {
+    estado.textContent = 'No pude preparar la llamada (' + ((e && e.message) || e) + '). Recarga la página.';
+  }
+}
+preparar();
+// El enlace firmado dura unos minutos: se renueva cada vez que vuelves a la página (no durante una llamada)
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') preparar(); });
+</script></body></html>
